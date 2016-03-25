@@ -8,6 +8,8 @@
 #include <sys/types.h> 
 
 #include <jansson.h>
+#include "error.c"
+
 
 #define PORT 5012
 
@@ -74,7 +76,7 @@ void clientHandler(int sock){
 	int n,activeSession = 0;
 	char buffer[256];
 	char Exit[] = "exit";
-
+	json_t *data;
 
 	while(1){
 		bzero(buffer,256);
@@ -85,7 +87,13 @@ void clientHandler(int sock){
 		}
 
 		if (activeSession == 1){
-			printf("Session activa\n");
+			user = json_loads(data,0,&error);
+			if (user){
+				write(sock,"{\"error\":{\"message\":\"Bad Request\",\"code\":400}}",47);
+
+			}else{
+
+			}
 			exit(1);
 		}else{
 			write(sock,"{\"error\":{\"message\":\"Unauthorized\",\"code\":401}}",47);
