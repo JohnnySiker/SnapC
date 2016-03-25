@@ -13,6 +13,10 @@
 
 int sessionState(char buffer[]);
 void clientHandler(int sock);
+int login(json_t user);
+int signup(json_t user);
+int chekcToken(json_t user);
+
 
 int main(int argc, char const *argv[]){
 	/*Variables servidor*/
@@ -91,24 +95,58 @@ void clientHandler(int sock){
 
 }
 
-int sessionState(char *buffer){
+int sessionState(char *data){
 	json_t *user;
 	json_error_t error;
+	json_int_t instruction;
+	
+	printf("%s\n",data );
+	user = json_loads(data,0,&error);
 
-	user = json_loads(buffer,0,&error);
-
-	if(!json_is_array(user)){
-    	fprintf(stderr, "error: root is not an array\n");
-    	json_decref(user);
-    	return 1;
-	}else{
-		printf("Lo que enviaste si es un JSON\n" );
+	if(!user){
+	    fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
+	    return 0;
 	}
 
+	if(!json_is_object(user)){
+    	fprintf(stderr, "error: root is not an object\n");
+    	json_decref(user);
+    	return 0;
+	}
+
+	instruction = json_integer_value(json_object_get(user, "instruction"));
+	printf("instruction: %d\n", instruction);
+
+	switch(instruction){
+		case 0:	/*Login*/
+			return login(*user);
+		break;
+		case 1:	/*SignUp*/
+			return signup(*user);
+		break;
+		case 2:	/*Check Token*/
+			return chekcToken(*user);
+		break;
+		default:
+			return 0;
+		break;
+	}
 	return 1;
 }
 
 
+int login(json_t user){
+	/*Comprobar*/
+	return 1;
+}
+int signup(json_t user){
+	/*Insertar usuario*/
+	return 1;
+}
+int chekcToken(json_t user){
+	/*Checar Tocken*/
+	return 1;
+}
 
 
 
