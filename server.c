@@ -77,6 +77,7 @@ void clientHandler(int sock){
 	char buffer[256];
 	char Exit[] = "exit";
 	json_t *data;
+	json_error_t error;
 
 	while(1){
 		bzero(buffer,256);
@@ -87,16 +88,15 @@ void clientHandler(int sock){
 		}
 
 		if (activeSession == 1){
-			user = json_loads(data,0,&error);
-			if (user){
-				write(sock,"{\"error\":{\"message\":\"Bad Request\",\"code\":400}}",47);
-
+			data = json_loads(data,0,&error);
+			if (!data){
+				write(sock,ERROR_BAD_REQUEST,sizeof(ERROR_BAD_REQUEST));
 			}else{
 
 			}
 			exit(1);
 		}else{
-			write(sock,"{\"error\":{\"message\":\"Unauthorized\",\"code\":401}}",47);
+			write(sock, ERROR_UNAUTHORIZED, sizeof(ERROR_UNAUTHORIZED));
 			activeSession = sessionState(buffer);
 		}	
 	}
