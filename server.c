@@ -8,6 +8,7 @@
 #include <sys/types.h> 
 
 #include <jansson.h>
+#include <uuid/uuid.h>
 #include "error.c"
 
 
@@ -18,6 +19,7 @@ void clientHandler(int sock);
 int login(json_t user);
 int signup(json_t user);
 int chekcToken(json_t user);
+void sessionError(int sock, int error);
 
 
 int main(int argc, char const *argv[]){
@@ -49,7 +51,7 @@ int main(int argc, char const *argv[]){
 
    while(1){
 
-   		clientSockfd = accept(serverSockfd,(struct sockaddr *) &cli_addr, &clilen);
+   		clientSockfd = accept(serverSockfd,(struct sockaddr *) &cli_addr,(socklen_t *) &clilen);
 
    		if (clientSockfd < 0){
    			perror("Error aceptando");
@@ -75,7 +77,6 @@ int main(int argc, char const *argv[]){
 void clientHandler(int sock){
 	int n,activeSession = 0;
 	char buffer[256];
-	char Exit[] = "exit";
 	json_t *data;
 	json_error_t error;
 
@@ -88,7 +89,7 @@ void clientHandler(int sock){
 		}
 
 		if (activeSession == 1){
-			data = json_loads(data,0,&error);
+			data = json_loads((const char *)data,0,&error);
 			if (!data){
 				write(sock,ERROR_BAD_REQUEST,sizeof(ERROR_BAD_REQUEST));
 			}else{
@@ -98,6 +99,13 @@ void clientHandler(int sock){
 		}else{
 			write(sock, ERROR_UNAUTHORIZED, sizeof(ERROR_UNAUTHORIZED));
 			activeSession = sessionState(buffer);
+			if (activeSession == 1){
+				/*Generar token*/
+
+			}else{
+				/*Espeficicar error*/
+				sessionError(sock,activeSession);
+			}
 		}	
 	}
 
@@ -123,7 +131,6 @@ int sessionState(char *data){
 	}
 
 	instruction = json_integer_value(json_object_get(user, "instruction"));
-	printf("instruction: %d\n", instruction);
 
 	switch(instruction){
 		case 0:	/*Login*/
@@ -145,17 +152,51 @@ int sessionState(char *data){
 
 int login(json_t user){
 	/*Comprobar*/
+
+	/*Errores
+		Npi Error -1
+		Usuario o contraseña invalida 201
+	*/
 	return 1;
 }
 int signup(json_t user){
 	/*Insertar usuario*/
+	/*Errores
+		Npi Error -1
+		Ya existe el Usuario 202
+
+	*/
 	return 1;
 }
 int chekcToken(json_t user){
 	/*Checar Tocken*/
+	/*Errores
+		Npi Error -1
+		Token invalido 209
+	*/
 	return 1;
 }
 
+
+void sessionError(int sock, int error){
+	switch(error){
+		case -1:	//Error desconocido
+			write(sock, ERROR_UNKNOW, sizeof(ERROR_UNKNOW));
+		break;
+		case 201:	//Usuario o contraseña invalida 201
+			write(sock, ERROR_FAILED_LOGIN, sizeof(ERROR_FAILED_LOGIN));
+		break;
+		case 202:	//Ya existe el Usuario 202
+			write(sock, ERROR_USERNAME_TAKEN, sizeof(ERROR_USERNAME_TAKEN));
+		break;
+		case 209:	//Token invalido 209
+			write(sock, ERROR_INVALID_TOKEN, sizeof(ERROR_INVALID_TOKEN));
+		break;
+		default:
+			write(sock, ERROR_UNKNOW, sizeof(ERROR_UNKNOW));
+		break;
+	}
+}
 
 
 
